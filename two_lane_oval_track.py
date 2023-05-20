@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
+from itertools import zip_longest
 
 def compute_max_distance(x, y):
     dx = np.diff(x)
@@ -12,7 +14,7 @@ def max_track_pts(x, y):
     return max(x) - min(x), max(y) - min(y)
 
 
-def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, save_path=None, filename='track.txt'):
+def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, save_path=None, filename='track.csv'):
     """
     Defines an oval track with a single lane defined as the centerline.
     This consists of two straight and parallel edges connect by two half circles on the right and left.
@@ -171,9 +173,9 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
 
     if show:
         # Plot oval track
-        plt.plot(x_inner_border, y_inner_border, color='black')
-        plt.plot(x_outer_border, y_outer_border, color='black')
-        plt.plot(x_lane,y_lane, linestyle='dashed', color='black')
+        plt.scatter(x_inner_border, y_inner_border, color='black')
+        plt.scatter(x_outer_border, y_outer_border, color='black')
+        plt.scatter(x_lane,y_lane, linestyle='dashed', color='black')
         plt.scatter(x_inner_centerline, y_inner_centerline, color='green')
         plt.scatter(x_outer_centerline, y_outer_centerline, color='blue')
         plt.title('Scatter plot of the track points. Increase ds for a sparser track.')
@@ -220,25 +222,27 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
             file = os.path.join(save_path, filename)
         else:
             file = filename
-        with open(file, 'w') as f:
-            f.write('Format: x, y \n')
-            f.write('\n InnerCenterLine \n')
-            x_inner_str = ','.join([str(x_inner_centerline[i]) for i in range(len(x_inner_centerline))])
-            y_inner_str = ','.join([str(y_inner_centerline[i]) for i in range(len(y_inner_centerline))])
-            f.write(x_inner_str + '\n')
-            f.write(y_inner_str)
 
-            f.write('\n OuterCenterLine \n')
-            x_outer_str = ','.join([str(x_outer_centerline[i]) for i in range(len(x_outer_centerline))])
-            y_outer_str = ','.join([str(y_outer_centerline[i]) for i in range(len(y_outer_centerline))])
-            f.write(x_outer_str + '\n')
-            f.write(y_outer_str)
-        
+        #total_distance = 2*L+(2*np.pi*R_lane)
+        #print(total_distance)
+
+        coord_rows = [x_inner_border, y_inner_border, x_inner_centerline, y_inner_centerline, x_lane, y_lane, x_outer_centerline, y_outer_centerline,
+                  x_outer_border, y_outer_border, x_lane, y_lane]
+
+        with open(file, 'w', newline='') as f:
+            coord_writer = csv.writer(f)
+            #coord_writer.writerow('total distance is ')
+            coord_writer.writerow(['edge1_x', 'edge2_y', 'centerline1_x', 'centerline1_y', 'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
+                          'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y'])
+            for row in zip_longest(*coord_rows):
+                coord_writer.writerow(row)
+            
+            
 
 
 if __name__ == "__main__":
     # Define the oval track
     oval_track(L=5., R=2., ds=0.01, verbose=True, show=True,
-               save=True, save_path='tracks', filename='oval_track_two_centerline.txt')
+               save=True, save_path='tracks', filename='oval_track_two_centerline.csv')
 
 
