@@ -214,6 +214,15 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
         plt.title('Outer Centerline plots')
         plt.show()
 
+        # Plot oval track 2
+        plt.scatter(x_inner_border, y_inner_border, color='black') #make border thicker
+        plt.scatter(x_outer_border, y_outer_border, color='black')
+        plt.scatter(x_lane, y_lane, color='black')
+        plt.scatter(x_inner_centerline, y_inner_centerline, color='grey', linestyle='dashed')
+        plt.scatter(x_outer_centerline, y_outer_centerline, color='grey', linestyle='dashed')
+        plt.title('Scatter plot of the track points. Increase ds for a sparser track.')
+        plt.show()
+
     if save:
         if save_path is not None:
             path_exists = os.path.exists(save_path)
@@ -225,6 +234,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
 
         #total_distance = 2*L+(2*np.pi*R_lane)
         #print(total_distance)
+        #use numpy.cumsum
 
         coord_rows = [x_inner_border, y_inner_border, x_inner_centerline, y_inner_centerline, x_lane, y_lane, x_outer_centerline, y_outer_centerline,
                   x_outer_border, y_outer_border, x_lane, y_lane]
@@ -232,7 +242,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
         with open(file, 'w', newline='') as f:
             coord_writer = csv.writer(f)
             #coord_writer.writerow('total distance is ')
-            coord_writer.writerow(['edge1_x', 'edge2_y', 'centerline1_x', 'centerline1_y', 'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
+            coord_writer.writerow(['edge1_x', 'edge1_y', 'centerline1_x', 'centerline1_y', 'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
                           'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y'])
             for row in zip_longest(*coord_rows):
                 coord_writer.writerow(row)
