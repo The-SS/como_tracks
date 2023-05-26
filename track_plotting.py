@@ -1,6 +1,6 @@
-#https://www.geeksforgeeks.org/how-to-create-animations-in-python/
-#https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html
-#https://matplotlib.org/stable/api/animation_api.html
+# https://www.geeksforgeeks.org/how-to-create-animations-in-python/
+# https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html
+# https://matplotlib.org/stable/api/animation_api.html
 
 
 import os
@@ -9,7 +9,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import csv
 
-#read csv to dictionary
+
+# read csv to dictionary
 def extract_coordinates(csv_file):
     data = {}
     with open(csv_file, 'r') as file:
@@ -22,6 +23,7 @@ def extract_coordinates(csv_file):
                     data[header].append(float(value))
 
     return data
+
 
 def animate_plot(data):
     edge1_x = coordinates['edge1_x']
@@ -37,8 +39,8 @@ def animate_plot(data):
 
     fig, ax = plt.subplots()
 
-    ax.set_xlim(min(edge2_x + edge3_x), max(edge2_x + edge3_x))
-    ax.set_ylim(min(edge2_x + edge3_y), max(edge2_x + edge3_y)) 
+    ax.set_xlim(min(edge2_x + edge3_x) - 1, max(edge2_x + edge3_x) + 1)
+    ax.set_ylim(min(edge2_x + edge3_y) - 1, max(edge2_x + edge3_y) + 1)
 
     line1, = ax.plot([], [], 'r-', lw=2)
     line2, = ax.plot([], [], 'b-', lw=2)
@@ -54,12 +56,13 @@ def animate_plot(data):
 
     ani = animation.FuncAnimation(fig, update, frames=None, interval=0.5, blit=True)
 
-    plt.plot(edge1_x, edge1_y, color='black', linewidth = 3)
-    plt.plot( edge3_x, edge3_y, color='black', linewidth = 3)
-    plt.plot(edge2_x, edge2_y, color='black', linestyle = 'dashed')
+    plt.plot(edge1_x, edge1_y, color='black', linewidth=3)
+    plt.plot(edge3_x, edge3_y, color='black', linewidth=3)
+    plt.plot(edge2_x, edge2_y, color='black', linestyle='dashed')
     plt.title('Plot of Road')
 
-    plt.show() 
+    plt.show()
+
 
 if __name__ == "__main__":
     coordinates = extract_coordinates('tracks/oval_track_two_centerline.csv')
