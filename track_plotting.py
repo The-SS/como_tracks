@@ -9,9 +9,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import csv
 
+#read csv to dictionary
 def extract_coordinates(csv_file):
     data = {}
-
     with open(csv_file, 'r') as file:
         reader = csv.DictReader(file)
         for row in reader:
@@ -64,6 +64,3 @@ def animate_plot(data):
 if __name__ == "__main__":
     coordinates = extract_coordinates('tracks/oval_track_two_centerline.csv')
     animate_plot(coordinates)
-
-
-
