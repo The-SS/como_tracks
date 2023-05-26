@@ -13,6 +13,13 @@ def compute_max_distance(x, y):
 def max_track_pts(x, y):
     return max(x) - min(x), max(y) - min(y)
 
+def calculate_cumulative_distance(x_coords, y_coords):
+    dx = np.diff(x_coords)
+    dy = np.diff(y_coords)
+    distances = np.sqrt(dx ** 2 + dy ** 2)
+    cumulative_distances = np.cumsum(distances)
+    return cumulative_distances
+
 
 def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, save_path=None, filename='track.csv'):
     """
@@ -214,15 +221,17 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
         plt.title('Outer Centerline plots')
         plt.show()
 
-        # Plot oval track 2
-        plt.scatter(x_inner_border, y_inner_border, color='black') #make border thicker
-        plt.scatter(x_outer_border, y_outer_border, color='black')
-        plt.scatter(x_lane, y_lane, color='black')
-        plt.scatter(x_inner_centerline, y_inner_centerline, color='grey', linestyle='dashed')
-        plt.scatter(x_outer_centerline, y_outer_centerline, color='grey', linestyle='dashed')
-        plt.title('Scatter plot of the track points. Increase ds for a sparser track.')
+        # Plot oval track that looks like a road
+        plt.plot(x_inner_border, y_inner_border, color='black', linewidth = 3)
+        plt.plot(x_outer_border, y_outer_border, color='black', linewidth = 3)
+        plt.plot(x_lane, y_lane, color='black')
+        plt.plot(x_inner_centerline, y_inner_centerline, color='grey', linestyle='dashed')
+        plt.plot(x_outer_centerline, y_outer_centerline, color='grey', linestyle='dashed')
+        plt.title('Plot of Road')
         plt.show()
 
+    # save the coordinates for all border, centerlines, and cumulative distance to a csv 
+    # file where the headers are all on one row and their respective coordinates are in the same column
     if save:
         if save_path is not None:
             path_exists = os.path.exists(save_path)
@@ -232,18 +241,15 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
         else:
             file = filename
 
-        #total_distance = 2*L+(2*np.pi*R_lane)
-        #print(total_distance)
-        #use numpy.cumsum
+        cumulative_distance = calculate_cumulative_distance(x_lane, y_lane)
 
         coord_rows = [x_inner_border, y_inner_border, x_inner_centerline, y_inner_centerline, x_lane, y_lane, x_outer_centerline, y_outer_centerline,
-                  x_outer_border, y_outer_border, x_lane, y_lane]
+                  x_outer_border, y_outer_border, x_lane, y_lane, cumulative_distance]
 
         with open(file, 'w', newline='') as f:
             coord_writer = csv.writer(f)
-            #coord_writer.writerow('total distance is ')
             coord_writer.writerow(['edge1_x', 'edge1_y', 'centerline1_x', 'centerline1_y', 'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
-                          'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y'])
+                          'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y', 'cumulative_distance'])
             for row in zip_longest(*coord_rows):
                 coord_writer.writerow(row)
             
@@ -254,5 +260,5 @@ if __name__ == "__main__":
     # Define the oval track
     oval_track(L=5., R=2., ds=0.01, verbose=True, show=True,
                save=True, save_path='tracks', filename='oval_track_two_centerline.csv')
-
+    
 
