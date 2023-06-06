@@ -1,19 +1,27 @@
-# https://www.geeksforgeeks.org/how-to-create-animations-in-python/
-# https://matplotlib.org/stable/api/_as_gen/matplotlib.patches.Patch.html
-# https://matplotlib.org/stable/api/animation_api.html
-
-
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.transforms as transforms
+import matplotlib.patches as patches
 import csv
+import math
 
-def create_square(center_x, center_y, side_length):
-    half_length = side_length / 2
-    x = [center_x - half_length, center_x + half_length, center_x + half_length, center_x - half_length, center_x - half_length]
-    y = [center_y - half_length, center_y - half_length, center_y + half_length, center_y + half_length, center_y - half_length]
-    return x, y
+def calculate_angle(x1, y1, x2, y2):
+    delta_x = x2 - x1
+    delta_y = y2 - y1
+    return math.degrees(math.atan2(delta_y, delta_x))
+
+def rotated_rectangle(x, y, width, height, angle_deg, color):
+    half_width = width / 2
+    half_height = height / 2
+
+    rectangle = patches.Rectangle((x - half_width, y - half_height), width, height, fill=True, facecolor=color)
+    angle_rad = math.radians(angle_deg)
+    transform = transforms.Affine2D().rotate_around(x, y, angle_rad)
+    rectangle.set_transform(transform + plt.gca().transData)
+
+    return rectangle
 
 # read csv to dictionary
 def extract_coordinates(csv_file):
@@ -28,7 +36,6 @@ def extract_coordinates(csv_file):
                     data[header].append(float(value))
 
     return data
-
 
 def animate_plot(coordinates, Lab_x, Lab_y, RC_x, RC_y):
     edge1_x = coordinates['edge1_x']
@@ -47,24 +54,29 @@ def animate_plot(coordinates, Lab_x, Lab_y, RC_x, RC_y):
         exit()
 
     fig, ax = plt.subplots()
-
     ax.set_xlim(min(edge2_x + edge3_x) - 1, max(edge2_x + edge3_x) + 1)
     ax.set_ylim(min(edge2_x + edge3_y) - 1, max(edge2_x + edge3_y) + 1)
-
-    car1, = ax.plot([], [], 'r-', lw=2)
-    car2, = ax.plot([], [], 'b-', lw=2)
+    plt.gca().set_aspect('equal', adjustable='box')
 
     def update(frame):
-        point_index = frame
+        index_1 = frame % len(centerline1_x)
+        index_2 = frame % len(centerline2_x)
 
-        car1_index = point_index % len(centerline1_x)
-        car2_index = point_index % len(centerline2_x)
+        if index_1+1 >= len(centerline1_x):
+            angle_1 = calculate_angle(centerline1_x[index_1], centerline1_y[index_1], centerline1_x[0], centerline1_y[0])
+        else:
+            angle_1 = calculate_angle(centerline1_x[index_1], centerline1_y[index_1], centerline1_x[index_1+1], centerline1_y[index_1+1])
 
-        car1_x, car1_y = create_square(centerline1_x[car1_index], centerline1_y[car1_index], 1)
-        car1.set_data(car1_x, car1_y)
+        car1 = rotated_rectangle(centerline1_x[index_1], centerline1_y[index_1], RC_y, RC_x, angle_1, 'red')
+        ax.add_patch(car1)
 
-        car2_x, car2_y = create_square(centerline2_x[car2_index], centerline2_y[car2_index], 1)
-        car2.set_data(car2_x, car2_y)
+        if index_2+1 >= len(centerline2_x):
+            angle_2 = calculate_angle(centerline2_x[index_2], centerline2_y[index_2], centerline2_x[0], centerline2_y[0])
+        else:
+            angle_2 = calculate_angle(centerline2_x[index_2], centerline2_y[index_2], centerline2_x[index_2+1], centerline2_y[index_2+1])
+
+        car2 = rotated_rectangle(centerline2_x[index_2], centerline2_y[index_2], RC_y, RC_x, angle_2, 'blue')
+        ax.add_patch(car2)
 
         return car1, car2
 
@@ -75,9 +87,7 @@ def animate_plot(coordinates, Lab_x, Lab_y, RC_x, RC_y):
     plt.plot(centerline2_x, centerline2_y, color='grey', linestyle='dashed')
     plt.title('Plot of Road')
 
-    
-    ani = animation.FuncAnimation(fig, update, frames=None, interval=0.5, blit=True, cache_frame_data=False)
-
+    ani = animation.FuncAnimation(fig, update, frames=None, interval=1, blit=True, cache_frame_data=False)
     plt.show()
 
 
