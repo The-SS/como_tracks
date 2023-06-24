@@ -41,16 +41,16 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     # Define x-y values for circular caps
     theta_right_inner_centerline = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R / ds)))
     theta_left_inner_centerline = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R / ds)))
-    x_right_inner_centerline = L / 2.0 + R * np.cos(theta_right_inner_centerline)
-    y_right_inner_centerline = R * np.sin(theta_right_inner_centerline)
-    x_left_inner_centerline = -L / 2.0 - R * np.cos(theta_left_inner_centerline)
-    y_left_inner_centerline = R * np.sin(theta_left_inner_centerline)
+    y_right_inner_centerline = L / 2.0 + R * np.cos(theta_right_inner_centerline)
+    x_right_inner_centerline = R * np.sin(theta_right_inner_centerline)
+    y_left_inner_centerline = -L / 2.0 - R * np.cos(theta_left_inner_centerline)
+    x_left_inner_centerline = R * np.sin(theta_left_inner_centerline)
 
     # Define x and y values for straight edges
-    x_top_inner_centerline = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_top_inner_centerline = np.ones(len(x_top_inner_centerline)) * R
-    x_bot_inner_centerline = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_bot_inner_centerline = np.ones(len(x_top_inner_centerline)) * - R
+    y_top_inner_centerline = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_top_inner_centerline = np.ones(len(y_top_inner_centerline)) * R
+    y_bot_inner_centerline = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_bot_inner_centerline = np.ones(len(y_top_inner_centerline)) * - R
 
     # Combine x and y values
     x_inner_centerline = np.concatenate((x_top_inner_centerline, x_left_inner_centerline, x_bot_inner_centerline, x_right_inner_centerline))
@@ -65,16 +65,16 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     # Define x-y values for circular caps
     theta_right_outer_centerline = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_outer_centerline / ds)))
     theta_left_outer_centerline = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R_outer_centerline / ds)))
-    x_right_outer_centerline = L / 2.0 + R_outer_centerline * np.cos(theta_right_outer_centerline)
-    y_right_outer_centerline = R_outer_centerline * np.sin(theta_right_outer_centerline)
-    x_left_outer_centerline = -L / 2.0 - R_outer_centerline * np.cos(theta_left_outer_centerline)
-    y_left_outer_centerline = R_outer_centerline * np.sin(theta_left_outer_centerline)
+    y_right_outer_centerline = L / 2.0 + R_outer_centerline * np.cos(theta_right_outer_centerline)
+    x_right_outer_centerline = R_outer_centerline * np.sin(theta_right_outer_centerline)
+    y_left_outer_centerline = -L / 2.0 - R_outer_centerline * np.cos(theta_left_outer_centerline)
+    x_left_outer_centerline = R_outer_centerline * np.sin(theta_left_outer_centerline)
 
     # Define x and y values for straight edges
-    x_top_outer_centerline = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_top_outer_centerline = np.ones(len(x_top_outer_centerline)) * R_outer_centerline
-    x_bot_outer_centerline = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_bot_outer_centerline = np.ones(len(x_top_outer_centerline)) * - R_outer_centerline
+    y_top_outer_centerline = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_top_outer_centerline = np.ones(len(y_top_outer_centerline)) * R_outer_centerline
+    y_bot_outer_centerline = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_bot_outer_centerline = np.ones(len(y_top_outer_centerline)) * - R_outer_centerline
 
     # Combine x and y values
     x_outer_centerline = np.concatenate((x_top_outer_centerline, x_left_outer_centerline, x_bot_outer_centerline, x_right_outer_centerline))
@@ -88,16 +88,16 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     # Define x-y values for INNER circular caps
     theta_right_inner = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_inner_border / ds)))
     theta_left_inner = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R_inner_border / ds)))
-    x_right_inner = L / 2.0 + R_inner_border * np.cos(theta_right_inner)
-    y_right_inner = R_inner_border * np.sin(theta_right_inner)
-    x_left_inner = -L / 2.0 - R_inner_border * np.cos(theta_left_inner)
-    y_left_inner = R_inner_border * np.sin(theta_left_inner)
+    y_right_inner = L / 2.0 + R_inner_border * np.cos(theta_right_inner)
+    x_right_inner = R_inner_border * np.sin(theta_right_inner)
+    y_left_inner = -L / 2.0 - R_inner_border * np.cos(theta_left_inner)
+    x_left_inner = R_inner_border * np.sin(theta_left_inner)
 
     # Define x and y values for INNER straight edges
-    x_top_inner = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_top_inner = np.ones(len(x_top_inner)) * R_inner_border
-    x_bot_inner = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_bot_inner = np.ones(len(x_top_inner)) * - R_inner_border
+    y_top_inner = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_top_inner = np.ones(len(y_top_inner)) * R_inner_border
+    y_bot_inner = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_bot_inner = np.ones(len(y_top_inner)) * - R_inner_border
 
     # Combine INNER x and y values
     x_inner_border = np.concatenate((x_top_inner, x_left_inner, x_bot_inner, x_right_inner))
@@ -109,18 +109,18 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     R_outer_border = R+2.1
 
     # Define x and y values for OUTER straight edges
-    x_top_outer = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_top_outer = np.ones(len(x_top_outer)) * R_outer_border
-    x_bot_outer = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_bot_outer = np.ones(len(x_top_outer)) * - R_outer_border
+    y_top_outer = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_top_outer = np.ones(len(y_top_outer)) * R_outer_border
+    y_bot_outer = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_bot_outer = np.ones(len(y_top_outer)) * - R_outer_border
 
     # Define x-y values for OUTER circular caps
     theta_right_outer = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_outer_border / ds)))
     theta_left_outer = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R_outer_border / ds)))
-    x_right_outer = L / 2.0 + R_outer_border * np.cos(theta_right_outer)
-    y_right_outer = R_outer_border * np.sin(theta_right_outer)
-    x_left_outer = -L / 2.0 - R_outer_border * np.cos(theta_left_outer)
-    y_left_outer = R_outer_border * np.sin(theta_left_outer)
+    y_right_outer = L / 2.0 + R_outer_border * np.cos(theta_right_outer)
+    x_right_outer = R_outer_border * np.sin(theta_right_outer)
+    y_left_outer = -L / 2.0 - R_outer_border * np.cos(theta_left_outer)
+    x_left_outer = R_outer_border * np.sin(theta_left_outer)
 
     # Combine OUTER x and y values
     x_outer_border = np.concatenate((x_top_outer, x_left_outer, x_bot_outer, x_right_outer))
@@ -132,18 +132,18 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     R_lane = R+0.7
 
     # Define x and y values for LANE straight edges
-    x_top_lane = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_top_lane = np.ones(len(x_top_lane)) * R_lane
-    x_bot_lane = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
-    y_bot_lane = np.ones(len(x_top_lane)) * - R_lane
+    y_top_lane = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_top_lane = np.ones(len(y_top_lane)) * R_lane
+    y_bot_lane = np.linspace(-L / 2, L / 2, int(np.ceil(L / ds)))[1:-1]
+    x_bot_lane = np.ones(len(y_top_lane)) * - R_lane
 
     # Define x-y values for LANE circular caps
     theta_right_lane = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_lane / ds)))
     theta_left_lane = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R_lane / ds)))
-    x_right_lane = L / 2.0 + R_lane * np.cos(theta_right_lane)
-    y_right_lane = R_lane * np.sin(theta_right_lane)
-    x_left_lane = -L / 2.0 - R_lane * np.cos(theta_left_lane)
-    y_left_lane = R_lane * np.sin(theta_left_lane)
+    y_right_lane = L / 2.0 + R_lane * np.cos(theta_right_lane)
+    x_right_lane = R_lane * np.sin(theta_right_lane)
+    y_left_lane = -L / 2.0 - R_lane * np.cos(theta_left_lane)
+    x_left_lane = R_lane * np.sin(theta_left_lane)
 
     # Combine LANE x and y values
     x_lane = np.concatenate((x_top_lane, x_left_lane, x_bot_lane, x_right_lane))
