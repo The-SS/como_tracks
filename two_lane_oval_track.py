@@ -1,3 +1,5 @@
+# File creates road data for a road with two centerlines based on the radius given in the function call 
+# where the radius given is used for the innermost centerline
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,7 +25,7 @@ def calculate_cumulative_distance(x_coords, y_coords):
 
 def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, save_path=None, filename='track.csv'):
     """
-    Defines an oval track with a single lane defined as the centerline.
+    Defines an oval track with a two lanes defined as the centerlines.
     This consists of two straight and parallel edges connect by two half circles on the right and left.
     The total track length is L + 2R and the width is 2R.
     :param L: length of straight edges (meters)
@@ -60,7 +62,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     """ 
     OUTER CENTERLINE
     """
-    R_outer_centerline = R+1.4
+    R_outer_centerline = R+0.426
 
     # Define x-y values for circular caps
     theta_right_outer_centerline = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_outer_centerline / ds)))
@@ -84,7 +86,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     """ 
     INNER BORDER
     """
-    R_inner_border = R-0.7
+    R_inner_border = R-0.213
     # Define x-y values for INNER circular caps
     theta_right_inner = np.linspace(-np.pi / 2, np.pi / 2, int(np.ceil(np.pi * R_inner_border / ds)))
     theta_left_inner = np.linspace(np.pi / 2, -np.pi / 2, int(np.ceil(np.pi * R_inner_border / ds)))
@@ -106,7 +108,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     """ 
     OUTER BORDER
     """
-    R_outer_border = R+2.1
+    R_outer_border = R+0.639
 
     # Define x and y values for OUTER straight edges
     y_top_outer = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
@@ -129,7 +131,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
     """ 
     LANE BORDER
     """
-    R_lane = R+0.7
+    R_lane = R+0.213
 
     # Define x and y values for LANE straight edges
     y_top_lane = np.linspace(L / 2, -L / 2, int(np.ceil(L / ds)))[1:-1]
@@ -251,14 +253,11 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
             coord_writer.writerow(['edge1_x', 'edge1_y', 'centerline1_x', 'centerline1_y', 'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
                           'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y', 'cumulative_distance'])
             for row in zip_longest(*coord_rows):
-                coord_writer.writerow(row)
-            
-            
-
+                coord_writer.writerow(row)  
 
 if __name__ == "__main__":
     # Define the oval track
-    oval_track(L=5., R=2., ds=0.01, verbose=True, show=True,
+    oval_track(L=4., R=2., ds=0.01, verbose=True, show=True,
                save=True, save_path='tracks', filename='oval_track_two_centerline.csv')
     
 

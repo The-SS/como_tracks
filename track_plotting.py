@@ -33,32 +33,55 @@ class RoadAnimation:
                 if 'y' in key:
                     self.centerline_y.append(self.coordinates[key])
 
-    def plot_trajec(self):
-        # Plot trajectory of centerlines all on one plot
-        num_centerlines = len(self.centerline_x)
-        fig, ax = plt.subplots(num_centerlines, 3, figsize=(12, 4*num_centerlines))
+    def plot_trajec(self, txt_file):
+        """
+        Function takes text file of single centerline data with a format of:
+        x, y, heading angle
+        
+        and displays collected data with simulated data to compare experimental variations
 
-        # Loop to plot all centerlines on plot
-        for i in range(num_centerlines):
-            # Plot trajectory
-            ax[i, 0].plot(self.centerline_x[i], self.centerline_y[i], color='black')
-            ax[i, 0].set_aspect('equal')
-            ax[i, 0].set_title(f"Centerline {i+1} - Trajectory")
-            ax[i, 0].set_xlabel("X")
-            ax[i, 0].set_ylabel("Y")
+        """
 
-            # Plot X coordinate
-            ax[i, 1].plot(self.centerline_x[i])
-            ax[i, 1].set_title(f"Centerline {i+1} - X Coordinate")
+        # Plots collected data from txt file with x,y,heading_angle format, and plots data with simulated centerline data
+        with open(txt_file, 'r') as file:
+            lines = file.readlines()[1:]
+        
+        x_values = []
+        y_values = []
+        heading_angles = []
+        
+        # Write data from text file to variables
+        for line in lines:
+            x, y, h = line.strip().split(',')
+            x_values.append(float(x))
+            y_values.append(float(y))
+            heading_angles.append(float(h))
+        
+        # Plot text file data
+        plt.figure(figsize=(8, 6))
+        plt.plot(x_values, y_values, 'r', label='Road Edges')
+        
+        # Plot Road edges and centerlines
+        for i in range(len(self.edges_x)):
+            if i == 0 or i == len(self.edges_x) - 1:
+                plt.plot(self.edges_x[i], self.edges_y[i], color='black', linewidth=3)
+            else:
+                plt.plot(self.edges_x[i], self.edges_y[i], color='black', linestyle='dashed')
 
-            # Plot Y coordinate
-            ax[i, 2].plot(self.centerline_y[i])
-            ax[i, 2].set_title(f"Centerline {i+1} - Y Coordinate")
+        for i in range(len(self.centerline_x)):
+            plt.plot(self.centerline_x[i], self.centerline_y[i], color='grey', linestyle='dashed', label='Road Centerline')
 
-        plt.tight_layout()
+        plt.title('Plot of Road')      
+        plt.axis('equal')
+        plt.legend()
         plt.show()
 
     def add_translate(self, vector):
+        """
+        Function will translate the track across a vector.
+        Vector variable should should be a set of coordinates [x,y].
+
+        """
         # Take vector [x,y] format and move edges and centerlines accordingly
         tx, ty = vector
 
@@ -73,6 +96,11 @@ class RoadAnimation:
             self.centerline_y[i] = [y + ty for y in self.centerline_y[i]]
     
     def rotate_track(self, angle):
+        """
+        Function will rotate the track at an angle.
+        Angle variable sent to track should be in degrees.
+
+        """
         # Convert the angle from degrees to radians
         angle_rad = math.radians(angle)
 
@@ -99,6 +127,14 @@ class RoadAnimation:
         return rotated_x, rotated_y
 
     def save_track(self, save_path, filename):
+        """
+        Function will save current coordinates whether they have been rotated, translated or neither.
+        Save_path variable is the name directory of the folder to save to. 
+        If given a name of "translated_tracks" the tracks will be saved in a folder called translated_tracks within the directory of the current file.
+
+        Filename is the name of the saved file, make sure to end the filename with .csv
+
+        """
         # Add all edge_x, edge_y, centerline_x, centerline_y numeration to header 
         headers = ['edge{}_x'.format(i) for i in range(1, len(self.edges_x) + 1)]
         headers += ['edge{}_y'.format(i) for i in range(1, len(self.edges_y) + 1)]
@@ -178,6 +214,11 @@ class RoadAnimation:
         return data
 
     def check_track_size(self):
+        """
+        Call function to check if the track is within the real labs size.
+        Adjust your imported track used in the initialization of the class if error persists.
+        
+        """
         # Check if track size is within paramaters and print error and end program if not
         if (
             min(min(self.edges_x)) < -self.lab_x / 2
@@ -188,7 +229,13 @@ class RoadAnimation:
             print("Track size is larger than lab setting. Adjust track size.")
             exit()
 
-    def animate_plot(self, save):
+    def animate_plot(self, save=True):
+        """
+        When function is called a animated plot of the class data is plotted and animated.
+        If save variable is set to True a gif is downloaded.
+        If save variable is set to False the plot is displayed on screen.
+
+        """
         # Set plot base
         fig, ax = plt.subplots()
         ax.set_xlim(min([item for sublist in self.edges_x for item in sublist]) - 1, max([item for sublist in self.edges_x for item in sublist]) + 1)
@@ -196,35 +243,38 @@ class RoadAnimation:
         plt.gca().set_aspect('equal', adjustable='box')
 
         # Declare items on plot that update
-        car1 = ax.plot([], [], color='red')[0]
-        car2 = ax.plot([], [], color='blue')[0]
+        car_artists = []
+        car_colors = ['red', 'blue', 'green']
+
+        for i in range(len(self.centerline_x)):
+            car_color = car_colors[i % len(car_colors)]  # Cycle through the available colors
+            car = ax.plot([], [], color=car_color)[0]
+            car_artists.append(car)
+
         time_label = ax.text(0.02, 0.95, '', transform=ax.transAxes, fontsize=12)
 
         # Animation
         def update(frame):
-            index_1 = frame % len(self.centerline_x[0])
-            index_2 = frame % len(self.centerline_x[1])
+            num_centerlines = len(self.centerline_x)
+            artists = []
 
-            if index_1 + 1 >= len(self.centerline_x[0]):
-                angle_1 = self._calculate_angle(self.centerline_x[0][index_1], self.centerline_y[0][index_1], self.centerline_x[0][0], self.centerline_y[0][0])
-            else:
-                angle_1 = self._calculate_angle(self.centerline_x[0][index_1], self.centerline_y[0][index_1], self.centerline_x[0][index_1 + 1], self.centerline_y[0][index_1 + 1])
+            for i in range(num_centerlines):
+                index = frame % len(self.centerline_x[i])
 
-            car1_points = self._rotated_rectangle(self.centerline_x[0][index_1], self.centerline_y[0][index_1], self.rc_y, self.rc_x, angle_1)
-            car1.set_data(*zip(*car1_points))
+                if index + 1 >= len(self.centerline_x[i]):
+                    angle = self._calculate_angle(self.centerline_x[i][index], self.centerline_y[i][index], self.centerline_x[i][0], self.centerline_y[i][0])
+                else:
+                    angle = self._calculate_angle(self.centerline_x[i][index], self.centerline_y[i][index], self.centerline_x[i][index + 1], self.centerline_y[i][index + 1])
 
-            if index_2 + 1 >= len(self.centerline_x[1]):
-                angle_2 = self._calculate_angle(self.centerline_x[1][index_2], self.centerline_y[1][index_2], self.centerline_x[1][0], self.centerline_y[1][0])
-            else:
-                angle_2 = self._calculate_angle(self.centerline_x[1][index_2], self.centerline_y[1][index_2], self.centerline_x[1][index_2 + 1], self.centerline_y[1][index_2 + 1])
-
-            car2_points = self._rotated_rectangle(self.centerline_x[1][index_2], self.centerline_y[1][index_2], self.rc_y, self.rc_x, angle_2)
-            car2.set_data(*zip(*car2_points))
+                car_points = self._rotated_rectangle(self.centerline_x[i][index], self.centerline_y[i][index], self.rc_y, self.rc_x, angle)
+                car_artists[i].set_data(*zip(*car_points))
+                artists.append(car_artists[i])
 
             time_seconds = frame / 100
             time_label.set_text('Time = {:.2f}s'.format(time_seconds))
+            artists.append(time_label)
 
-            return car1, car2, time_label
+            return artists
 
         # Plot all static edges and centerlines of road
         for i in range(len(self.edges_x)):
@@ -239,7 +289,7 @@ class RoadAnimation:
         plt.title('Plot of Road')
 
         # Animate plot
-        ani = animation.FuncAnimation(fig, update, frames=3000, interval=1, blit=True, cache_frame_data=False)
+        ani = animation.FuncAnimation(fig, update, frames=None, interval=1, blit=True, cache_frame_data=False)
 
         if (save):
             # Save plot
@@ -250,15 +300,17 @@ class RoadAnimation:
             plt.show()
 
 if __name__ == "__main__":
-    lab_x = 20
-    lab_y = 30
-    rc_x = 1
-    rc_y = 2
+    lab_x = 6.096 # 20 feet in meters
+    lab_y = 9.144 # 30 feet in meters
+    rc_x = 0.305  # 1 foot in meters
+    rc_y = 0.610  # 2 feet in meters
 
-    road_animation = RoadAnimation(lab_x, lab_y, rc_x, rc_y, 'tracks/oval_track_two_centerline.csv')
-    #road_animation.check_track_size()
-    #road_animation.plot_trajec()
+    road_animation = RoadAnimation(lab_x, lab_y, rc_x, rc_y, 'tracks/oval_track.csv')
+    road_animation.check_track_size()
+
+    #road_animation.plot_trajec('oval_track_single_lane_pos2023-06-30_16_00_43.txt')
     #road_animation.add_translate([2.5, -1.5])
     #road_animation.rotate_track(45)
     #road_animation.save_track('translated_tracks', 'updated_coords.csv')
+
     road_animation.animate_plot(save=False)
