@@ -17,7 +17,7 @@ class Teleport:
         """
         Print the current pose of the robot.
         """
-        return f'x: {self.x}, y: {self.y}'
+        return 'x: {}, y: {}'.format(self.x, self.y)
 
 
 class SingleIntegrator:
@@ -36,7 +36,7 @@ class SingleIntegrator:
         """
         Print the current pose of the robot.
         """
-        return f'x: {self.x}, y: {self.y}'
+        return 'x: {}, y: {}'.format(self.x, self.y)
 
 
 class Unicycle:
@@ -64,7 +64,7 @@ class Unicycle:
         """
         Print the current pose of the unicycle.
         """
-        return f'x: {self.x}, y: {self.y}, theta: {self.theta}, v: {self.v}'
+        return 'x: {}, y: {}, theta: {}, v: {}'.format(self.x, self.y, self.theta, self.v)
 
 
 class SingleTrack:
@@ -113,7 +113,7 @@ class SingleTrack:
         Print state.
         """
         state = self.get_state()
-        return f'x: {state[0]}, y: {state[1]}, heading: {state[2]}, v: {state[3]}, steering: {self.u[1]}'
+        return 'x: {}, y: {}, heading: {}, v: {}, steering: {}'.format(state[0], state[1], state[2], state[3], self.u[1])
 
 
 def plot_data(t, x, y, heading=None, steering=None, title=None):

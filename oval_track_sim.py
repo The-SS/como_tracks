@@ -5,8 +5,7 @@ import matplotlib.pyplot as plt
 from dynamics import *
 
 
-def transform_point_to_local_frame(point_pos_global: np.ndarray,
-                                   robot_pos_global: np.ndarray, robot_heading_global: float):
+def transform_point_to_local_frame(point_pos_global, robot_pos_global, robot_heading_global):
     """
     Transforms a given point in the global frame to the local robot frame
     :param point_pos_global: x,y position of the point in the global frame (meters)
@@ -39,7 +38,7 @@ def find_closest_index(x_arr, y_arr, pos, L):
 
 def get_waypoints_ahead(x_waypoints, y_waypoints, vehicle_position, L):
     # Find the nearest waypoint to the vehicle
-    min_distance = math.inf
+    min_distance = float('inf')
     nearest_waypoint_index = 0
 
     for i in range(len(x_waypoints)):
@@ -68,7 +67,7 @@ def get_waypoints_ahead(x_waypoints, y_waypoints, vehicle_position, L):
 
 def get_waypoints_ahead_looped(x_waypoints, y_waypoints, vehicle_position, L):
     # Find the nearest waypoint to the vehicle
-    min_distance = math.inf
+    min_distance = float('inf')
     nearest_waypoint_index = 0
 
     for i in range(len(x_waypoints)):
@@ -85,7 +84,10 @@ def get_waypoints_ahead_looped(x_waypoints, y_waypoints, vehicle_position, L):
     for i in range(nearest_waypoint_index, nearest_waypoint_index + len(x_waypoints)):
         index = i % len(x_waypoints)  # Wrap around the waypoints list
 
-        distance = math.sqrt((vehicle_position[0] - x_waypoints[index]) ** 2 + (vehicle_position[1] - y_waypoints[index]) ** 2)
+        if i == nearest_waypoint_index:
+            distance = math.sqrt((vehicle_position[0] - x_waypoints[index]) ** 2 + (vehicle_position[1] - y_waypoints[index]) ** 2)
+        else:
+            distance = math.sqrt((x_waypoints[index-1] - x_waypoints[index]) ** 2 + (y_waypoints[index-1] - y_waypoints[index]) ** 2)
         accumulated_distance += distance
         waypoints_ahead_x.append(x_waypoints[index])
         waypoints_ahead_y.append(y_waypoints[index])
@@ -136,7 +138,7 @@ def plot_sim(x, y, x_track, y_track):
 
 
 def main():
-    file = os.path.join('tracks', 'oval_track_single_centerline.txt')
+    file = os.path.join('tracks', 'oval_track_single_centerline3.txt')
     x, y = load_tack_txt(file)
     x0, y0 = x[0], y[0]
     x1, y1 = x[1], y[1]
