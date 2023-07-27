@@ -84,6 +84,40 @@ def get_waypoints_ahead_looped(x_waypoints, y_waypoints, vehicle_position, L):
     for i in range(nearest_waypoint_index, nearest_waypoint_index + len(x_waypoints)):
         index = i % len(x_waypoints)  # Wrap around the waypoints list
 
+        distance = math.sqrt((vehicle_position[0] - x_waypoints[index]) ** 2 + (vehicle_position[1] - y_waypoints[index]) ** 2)
+        accumulated_distance += distance
+        waypoints_ahead_x.append(x_waypoints[index])
+        waypoints_ahead_y.append(y_waypoints[index])
+
+        # Break the loop if accumulated distance exceeds the lookahead distance
+        if accumulated_distance >= L:
+            break
+
+    return waypoints_ahead_x, waypoints_ahead_y, accumulated_distance
+
+def get_waypoints_heuristic(x_waypoints, y_waypoints, vehicle_position, L, prev_idx):
+    # Find the nearest waypoint to the vehicle
+    min_distance = float('inf')
+    nearest_waypoint_index = 0
+    length = len(x_waypoints)
+
+    for i in range(len(x_waypoints)):
+        j = (i + prev_idx) % length
+        distance = math.sqrt((vehicle_position[0] - x_waypoints[j]) ** 2 + (vehicle_position[1] - y_waypoints[j]) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_waypoint_index = j
+        else:
+            break
+
+    # Iterate through waypoints from the nearest waypoint and accumulate distances
+    accumulated_distance = 0.0
+    waypoints_ahead_x = []
+    waypoints_ahead_y = []
+
+    for i in range(nearest_waypoint_index, nearest_waypoint_index + len(x_waypoints)):
+        index = i % len(x_waypoints)  # Wrap around the waypoints list
+
         if i == nearest_waypoint_index:
             distance = math.sqrt((vehicle_position[0] - x_waypoints[index]) ** 2 + (vehicle_position[1] - y_waypoints[index]) ** 2)
         else:
@@ -96,7 +130,7 @@ def get_waypoints_ahead_looped(x_waypoints, y_waypoints, vehicle_position, L):
         if accumulated_distance >= L:
             break
 
-    return waypoints_ahead_x, waypoints_ahead_y, accumulated_distance
+    return waypoints_ahead_x, waypoints_ahead_y, accumulated_distance, nearest_waypoint_index
 
 
 def get_arc_radius(wp, dist, rob_pos, rob_head):
