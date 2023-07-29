@@ -257,7 +257,7 @@ def oval_track(L: float, R: float, ds=0.01, verbose=True, show=True, save=True, 
 
 if __name__ == "__main__":
     # Define the oval track
-    oval_track(L=4., R=2., ds=0.01, verbose=True, show=True,
+    oval_track(L=3., R=2., ds=0.01, verbose=True, show=True,
                save=True, save_path='tracks', filename='oval_track_two_centerline.csv')
     
 
