@@ -1,3 +1,9 @@
+"""
+Author: Hussein Jabak 
+Email:  hjabak99@gmail.com
+Date:   08/06/2023
+"""
+
 # File creates road data for a road with two centerlines based on the radius given in the function call 
 # where the radius given is used for the innermost centerline
 import os

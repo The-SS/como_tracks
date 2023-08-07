@@ -1,3 +1,9 @@
+"""
+Author: Hussein Jabak 
+Email:  hjabak99@gmail.com
+Date:   08/06/2023
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,6 +12,34 @@ from matplotlib.animation import PillowWriter
 import csv
 import math
 
+"""
+class TrackPlotter:
+    def plot_track():
+        # creates a figure and plots the track on it (just the lines)
+    def plot_exp_traj(exp_data):
+        # call plot_track then also plot the experiment data
+    def animate_exp(exp_data):
+        # call plot_track and animate the experiment from exp_data
+    ....
+
+
+# class ExperimentAnimation(TrackPlotter):
+#     def __init__():
+#         pass
+
+#     def _prep_figure():
+#     def _plot_somethiong():
+#     def _compute_data():
+
+#     def animate_plot(*):
+#         self._prep_figure()
+
+#         pass
+
+def experiment_animation(track_plotter: TrackPlotter, experiment_data: list):
+    track_plotter.plot_track()
+    # (animate_plot)
+"""
 
 class RoadAnimation:
     def __init__(self, lab_x, lab_y, rc_x, rc_y, csv_file):
@@ -339,7 +373,7 @@ if __name__ == "__main__":
     rc_x = 0.305  # 1 foot in meters
     rc_y = 0.610  # 2 feet in meters
 
-    road_animation = RoadAnimation(lab_x, lab_y, rc_x, rc_y, 'tracks/oval_track_two_centerline.csv')
+    road_animation = RoadAnimation(lab_x, lab_y, rc_x, rc_y, 'tracks_2/figure8_two_centerline.csv')
     road_animation.check_track_size()
 
     # road_animation.plot_trajec('oval_track_single_lane_pos2023-06-30_16_00_43.txt')
