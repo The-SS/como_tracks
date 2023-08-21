@@ -4,19 +4,13 @@ Email:  hjabak99@gmail.com
 Date:   08/06/2023
 """
 
-#fix distance between points
-#add static plot to track_plotting
-#fix importing of track data in track_plotting
-#move stopping borders back a bit
-#adjust track_plotting class and functions to accomodate experimental data 
-#change read_me file 
-
 import os
 import math
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
 from itertools import zip_longest
+from scipy.interpolate import interp1d
 
 def generate_infinity_symbol_coordinates(a, num_points):
     theta = np.linspace(0, 2 * np.pi, num_points)
@@ -55,26 +49,35 @@ def calculate_cumulative_distance(x_coords, y_coords):
 
 def apply_discrete_step(x_coords, y_coords, discretestep):
     """
-    Apply the discrete step logic to the given x and y coordinates.
-
     Parameters:
     x_coords: List or numpy array of x coordinates
     y_coords: List or numpy array of y coordinates
-    discretestep: Distance between any two points to be considered discrete steps
+    discretestep: Desired distance between any two consecutive points
 
     Returns:
-    x_discrete: List of x coordinates after applying the discrete step logic
-    y_discrete: List of y coordinates after applying the discrete step logic
+    x_discrete: List of x coordinates after spacing
+    y_discrete: List of y coordinates after spacing
     """
-    x_discrete, y_discrete = [], []
-
-    for x, y in zip(x_coords, y_coords):
-        if not x_discrete or np.linalg.norm([x - x_discrete[-1], y - y_discrete[-1]]) >= discretestep:
-            x_discrete.append(x)
-            y_discrete.append(y)
-
+    num_points = len(x_coords)
+    
+    # Calculate cumulative distances
+    cumulative_distances = np.zeros(num_points)
+    for i in range(1, num_points):
+        dx = x_coords[i] - x_coords[i - 1]
+        dy = y_coords[i] - y_coords[i - 1]
+        cumulative_distances[i] = cumulative_distances[i - 1] + np.sqrt(dx**2 + dy**2)
+    
+    # Create interpolation functions
+    f_x = interp1d(cumulative_distances, x_coords, kind='linear')
+    f_y = interp1d(cumulative_distances, y_coords, kind='linear')
+    
+    # Generate new points
+    num_steps = int(cumulative_distances[-1] / discretestep)
+    new_cumulative_distances = np.linspace(0, cumulative_distances[-1], num_steps)
+    x_discrete = f_x(new_cumulative_distances)
+    y_discrete = f_y(new_cumulative_distances)
+    
     return x_discrete, y_discrete
-
 
 def find_intersection_or_similar_points(line1_x, line1_y, line2_x, line2_y):
     """
@@ -181,13 +184,25 @@ def find_intersection_or_similar_points(line1_x, line1_y, line2_x, line2_y):
 
     return closest_x, closest_y
 
-def figure8_track(I: float, B: float, ds: float, num_points: int, show=True, save=True, save_path=None, filename='track.csv'):
+def find_index_on_centerline(x, y, centerline_x, centerline_y):
+    min_distance = float('inf')
+    closest_index = None
+
+    for i in range(len(centerline_x)):
+        distance = (x - centerline_x[i])**2 + (y - centerline_y[i])**2
+        if distance < min_distance:
+            min_distance = distance
+            closest_index = i
+
+    return closest_index
+
+def figure8_track(I: float, B: float, ds: float, num_points= 1000, show=True, save=True, save_path=None, filename='track.csv'):
     """
     Defines a figure eight track with two lanes defined as the centerlines.
     :param I: Size of Infinity symbol (meters)
     :parap B: Distance between centerline and border on either side (meters)
-    :param ds: discrete step size (meters)
-    :param num_points: density for inner track
+    :param ds: discrete step size (meters) (change ds to change track density)
+    :param num_points: density for inner track creation
     :param show: True --> plots the track
     :param save: True --> saves the track in a text file
     :return:
@@ -220,8 +235,6 @@ def figure8_track(I: float, B: float, ds: float, num_points: int, show=True, sav
     nx, ny = calculate_normals(x_centerline2, y_centerline2)
     x_border_2 = x_centerline2 - B * nx
     y_border_2 = y_centerline2 - B * ny
-
-
 
     """
     GENERATE RIGHT SIDE OF FIGURE EIGHT TRACK
@@ -358,6 +371,55 @@ def figure8_track(I: float, B: float, ds: float, num_points: int, show=True, sav
     x_border_1_intersection,    y_border_1_intersection    = apply_discrete_step(x_border_1_intersection,    y_border_1_intersection, ds)
     x_border_2_intersection,    y_border_2_intersection    = apply_discrete_step(x_border_2_intersection,    y_border_2_intersection, ds)
 
+    """
+    MOVE STOPPING POINT AND STOPPING BORDER AWAY FROM INTERSECTION
+    """
+    move_by = 25
+
+    index1 = find_index_on_centerline(x1_stopping[0], y1_stopping[0], x_concatenated_centerline1, y_concatenated_centerline1)
+    index1 -=move_by
+    x1_stopping[0] = x_concatenated_centerline1[index1]
+    y1_stopping[0] = y_concatenated_centerline1[index1]
+
+    index1 = find_index_on_centerline(x1_stopping[1], y1_stopping[1], x_concatenated_centerline1, y_concatenated_centerline1)
+    index1 -=move_by
+    x1_stopping[1] = x_concatenated_centerline1[index1]
+    y1_stopping[1] = y_concatenated_centerline1[index1]
+
+    index1 = find_index_on_centerline(x2_stopping[0], y2_stopping[0], x_concatenated_centerline2, y_concatenated_centerline2)
+    index1 -=move_by
+    x2_stopping[0] = x_concatenated_centerline2[index1]
+    y2_stopping[0] = y_concatenated_centerline2[index1]
+
+    index1 = find_index_on_centerline(x2_stopping[1], y2_stopping[1], x_concatenated_centerline2, y_concatenated_centerline2)
+    index1 -=move_by
+    x2_stopping[1] = x_concatenated_centerline2[index1]
+    y2_stopping[1] = y_concatenated_centerline2[index1]
+
+    # Calculate the midpoint between x1_stopping[0], x2_stopping[0] and y1_stopping[0], y2_stopping[0]
+    midpoint_x = (x1_stopping[0] + x2_stopping[0]) / 2
+    midpoint_y = (y1_stopping[0] + y2_stopping[0]) / 2
+
+    # Calculate the shift needed for x_border_1_intersection and y_border_1_intersection
+    shift_x = midpoint_x - (x_border_1_intersection[0] + x_border_1_intersection[-1]) / 2
+    shift_y = midpoint_y - (y_border_1_intersection[0] + y_border_1_intersection[-1]) / 2
+
+    # Apply the shift to x_border_1_intersection and y_border_1_intersection
+    x_border_1_intersection = [x + shift_x for x in x_border_1_intersection]
+    y_border_1_intersection = [y + shift_y for y in y_border_1_intersection]
+    
+    # Calculate the midpoint between x1_stopping[1], x2_stopping[1] and y1_stopping[1], y2_stopping[1]
+    midpoint_x = (x1_stopping[1] + x2_stopping[1]) / 2
+    midpoint_y = (y1_stopping[1] + y2_stopping[1]) / 2
+
+    # Calculate the shift needed for x_border_1_intersection and y_border_2_intersection
+    shift_x = midpoint_x - (x_border_2_intersection[0] + x_border_2_intersection[-1]) / 2
+    shift_y = midpoint_y - (y_border_2_intersection[0] + y_border_2_intersection[-1]) / 2
+
+    # Apply the shift to x_border_1_intersection and y_border_2_intersection
+    x_border_2_intersection = [x + shift_x for x in x_border_2_intersection]
+    y_border_2_intersection = [y + shift_y for y in y_border_2_intersection]
+
     if show:
         # Plot both versions of the infinity symbol with border on the same graph
         plt.figure(figsize=(10, 6))
@@ -461,8 +523,8 @@ def figure8_track(I: float, B: float, ds: float, num_points: int, show=True, sav
             coord_writer.writerow(['edge1_x', 'edge1_y', 'centerline1_x', 'centerline1_y', 
                                    'edge2_x', 'edge2_y', 'centerline2_x', 'centerline2_y', 
                                    'edge3_x', 'edge3_y', 'road_centerline_x', 'road_centerline_y', 
-                                   'border1_intersection_x', 'border1_intersection_y','border2_intersection_x', 'border2_intersection_y', 
-                                   'centerline1_stop_x', 'centerline1_stop_y', 'centerline2_stop_x', 'centerline2_stop_y',
+                                   'intersection_border1_x', 'intersection_border1_y','intersection_border2_x', 'intersection_border2_y', 
+                                   'centerpoint1_stop_x', 'centerpoint1_stop_y', 'centerpoint2_stop_x', 'centerpoint2_stop_y',
                                    'cumulative_distance'])
             for row in zip_longest(*coord_rows):
                 coord_writer.writerow(row)

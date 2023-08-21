@@ -5,43 +5,13 @@ Date:   08/06/2023
 """
 
 import os
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.animation import PillowWriter
 import csv
 import math
 
-"""
 class TrackPlotter:
-    def plot_track():
-        # creates a figure and plots the track on it (just the lines)
-    def plot_exp_traj(exp_data):
-        # call plot_track then also plot the experiment data
-    def animate_exp(exp_data):
-        # call plot_track and animate the experiment from exp_data
-    ....
-
-
-# class ExperimentAnimation(TrackPlotter):
-#     def __init__():
-#         pass
-
-#     def _prep_figure():
-#     def _plot_somethiong():
-#     def _compute_data():
-
-#     def animate_plot(*):
-#         self._prep_figure()
-
-#         pass
-
-def experiment_animation(track_plotter: TrackPlotter, experiment_data: list):
-    track_plotter.plot_track()
-    # (animate_plot)
-"""
-
-class RoadAnimation:
     def __init__(self, lab_x, lab_y, rc_x, rc_y, csv_file):
         """
         Initializes the RoadAnimation class.
@@ -62,6 +32,12 @@ class RoadAnimation:
         self.edges_y = []
         self.centerline_x = []
         self.centerline_y = []
+        self.intersection_x = []
+        self.intersection_y = []
+        self.stopping_point_x = []
+        self.stopping_point_y = []
+        self.experiment_data_x = []
+        self.experiment_data_y = []
 
         # Parse through coordinates dictionary and append keys to corresponding lists
         for key in self.coordinates.keys():
@@ -75,10 +51,20 @@ class RoadAnimation:
                     self.centerline_x.append(self.coordinates[key])
                 if 'y' in key:
                     self.centerline_y.append(self.coordinates[key])
-
+            if key.startswith('intersection'):
+                if 'x' in key:
+                    self.intersection_x.append(self.coordinates[key])
+                if 'y' in key:
+                    self.intersection_y.append(self.coordinates[key])
+            if key.startswith('centerpoint'):
+                if 'x' in key:
+                    self.stopping_point_x.append(self.coordinates[key])
+                if 'y' in key:
+                    self.stopping_point_y.append(self.coordinates[key])
+            
     def plot_trajec(self, txt_file):
         """
-        NOTE: Currently only works properly with tracks that contain one centerline.
+        NOTE: Currently only works properly with tracks that contain one vehicle.
 
         Plots collected data from a text file and compares it with simulated centerline data.
 
@@ -100,6 +86,9 @@ class RoadAnimation:
             y_values.append(float(y))
             heading_angles.append(float(h))
 
+        self.experiment_data_x = [x_values]
+        self.experiment_data_y = [y_values]
+        
         # Plot text file data
         plt.figure(figsize=(8, 6))
         plt.plot(x_values, y_values, 'r', label='Road Edges')
@@ -118,6 +107,30 @@ class RoadAnimation:
         plt.axis('equal')
         plt.legend()
         plt.show()
+
+    def plot_track(self, show_plot=True):
+        plt.figure(figsize=(10, 6))
+
+        # Plot all static edges and centerlines of road
+        for i in range(len(self.edges_x)):
+            if i == 0 or i == len(self.edges_x) - 1:
+                plt.plot(self.edges_x[i], self.edges_y[i], color='black', linewidth=3)
+            else:
+                plt.plot(self.edges_x[i], self.edges_y[i], color='black', linestyle='dashed')
+
+        for i in range(len(self.centerline_x)):
+            plt.plot(self.centerline_x[i], self.centerline_y[i], color='grey', linestyle='dashed')
+
+        if self.intersection_x:
+            for i in range(len(self.intersection_x)):
+                plt.plot(self.intersection_x[i], self.intersection_y[i], color='red')
+
+        if show_plot:
+            plt.show()
+        else:
+            plt.close()
+
+        return
 
     def add_translate(self, vector):
         """
@@ -139,6 +152,18 @@ class RoadAnimation:
             self.centerline_x[i] = [x + tx for x in self.centerline_x[i]]
             self.centerline_y[i] = [y + ty for y in self.centerline_y[i]]
 
+        # Add to x and y values of intersection lines
+        if self.intersection_x:
+            for i in range(len(self.intersection_x)):
+                self.intersection_x[i] = [x + tx for x in self.intersection_x[i]]
+                self.intersection_y[i] = [y + ty for y in self.intersection_y[i]]
+
+        # Add to x and y values of stopping points
+        if self.stopping_point_x:
+            for i in range(len(self.stopping_point_x)):
+                self.stopping_point_x[i] = [x + tx for x in self.stopping_point_x[i]]
+                self.stopping_point_y[i] = [y + ty for y in self.stopping_point_y[i]]
+
     def rotate_track(self, angle):
         """
         Rotates the track at a given angle.
@@ -157,6 +182,10 @@ class RoadAnimation:
         for i in range(len(self.centerline_x)):
             self.centerline_x[i], self.centerline_y[i] = TrackUtils._rotate_points(self.centerline_x[i], self.centerline_y[i], angle_rad)
 
+        if self.intersection_x:
+            for i in range(len(self.intersection_x)):
+                self.intersection_x[i], self.intersection_y[i] = TrackUtils._rotate_points(self.intersection_x[i], self.intersection_y[i], angle_rad)
+
     def save_track(self, save_path, filename):
         """
         Saves the current track coordinates to a CSV file.
@@ -171,6 +200,12 @@ class RoadAnimation:
         headers += ['centerline{}_x'.format(i) for i in range(1, len(self.centerline_x) + 1)]
         headers += ['centerline{}_y'.format(i) for i in range(1, len(self.centerline_y) + 1)]
 
+        if self.intersection_x:
+            headers += ['intersection{}_x'.format(i) for i in range(1, len(self.intersection_x) + 1)]
+            headers += ['intersection{}_y'.format(i) for i in range(1, len(self.intersection_y) + 1)]
+            headers += ['stopping_point{}_x'.format(i) for i in range(1, len(self.stopping_point_x) + 1)]
+            headers += ['stopping_point{}_y'.format(i) for i in range(1, len(self.stopping_point_y) + 1)]
+
         # Append each header's respective values in following rows
         data = []
         for i in range(len(max(self.edges_x, key=len))):
@@ -182,6 +217,15 @@ class RoadAnimation:
             for j in range(len(self.centerline_x)):
                 row.append(self.centerline_x[j][i] if i < len(self.centerline_x[j]) else '')
                 row.append(self.centerline_y[j][i] if i < len(self.centerline_y[j]) else '')
+
+            if self.intersection_x:
+                for j in range(len(self.intersection_x)):
+                    row.append(self.intersection_x[j][i] if i < len(self.intersection_x[j]) else '')
+                    row.append(self.intersection_y[j][i] if i < len(self.intersection_y[j]) else '')
+
+                for j in range(len(self.stopping_point_x)):
+                    row.append(self.stopping_point_x[j][i] if i < len(self.stopping_point_x[j]) else '')
+                    row.append(self.stopping_point_y[j][i] if i < len(self.stopping_point_y[j]) else '')
 
             data.append(row)
 
@@ -245,23 +289,23 @@ class RoadAnimation:
 
         # Animation
         def update(frame):
-            num_centerlines = len(self.centerline_x)
+            num_centerlines = len(self.experiment_data_x)
             artists = []
 
             for i in range(num_centerlines):
-                index = frame % len(self.centerline_x[i])
+                index = frame % len(self.experiment_data_x[i])
 
-                if index + 1 >= len(self.centerline_x[i]):
+                if index + 1 >= len(self.experiment_data_x[i]):
                     angle = TrackUtils._calculate_angle(
-                        self.centerline_x[i][index], self.centerline_y[i][index], self.centerline_x[i][0], self.centerline_y[i][0]
+                        self.experiment_data_x[i][index], self.experiment_data_y[i][index], self.experiment_data_x[i][0], self.experiment_data_y[i][0]
                     )
                 else:
                     angle = TrackUtils._calculate_angle(
-                        self.centerline_x[i][index], self.centerline_y[i][index], self.centerline_x[i][index + 1], self.centerline_y[i][index + 1]
+                        self.experiment_data_x[i][index], self.experiment_data_y[i][index], self.experiment_data_x[i][index + 1], self.experiment_data_y[i][index + 1]
                     )
 
                 car_points = TrackUtils._rotated_rectangle(
-                    self.centerline_x[i][index], self.centerline_y[i][index], self.rc_y, self.rc_x, angle
+                    self.experiment_data_x[i][index], self.experiment_data_y[i][index], self.rc_y, self.rc_x, angle
                 )
                 car_artists[i].set_data(*zip(*car_points))
                 artists.append(car_artists[i])
@@ -284,9 +328,9 @@ class RoadAnimation:
 
         plt.title('Plot of Road')
 
-        max_centerline_length = max(len(centerline) for centerline in self.centerline_x)
+        max_centerline_length = max(len(centerline) for centerline in self.experiment_data_x)
         # Animate plot
-        ani = animation.FuncAnimation(fig, update, frames=max_centerline_length, interval=1, blit=True, cache_frame_data=False)
+        ani = animation.FuncAnimation(fig, update, frames=max_centerline_length, interval=10, blit=True, cache_frame_data=False)
 
         if save:
             # Save plot
@@ -366,19 +410,17 @@ class TrackUtils:
 
         return rotated_x, rotated_y
 
-
 if __name__ == "__main__":
     lab_x = 6.096  # 20 feet in meters
     lab_y = 9.144  # 30 feet in meters
     rc_x = 0.305  # 1 foot in meters
     rc_y = 0.610  # 2 feet in meters
 
-    road_animation = RoadAnimation(lab_x, lab_y, rc_x, rc_y, 'tracks_2/figure8_two_centerline.csv')
-    road_animation.check_track_size()
-
-    # road_animation.plot_trajec('oval_track_single_lane_pos2023-06-30_16_00_43.txt')
-    # road_animation.add_translate([2.5, -1.5])
-    # road_animation.rotate_track(45)
-    # road_animation.save_track('translated_tracks', 'updated_coords.csv')
-
+    road_animation = TrackPlotter(lab_x, lab_y, rc_x, rc_y, 'tracks/oval_track.csv')
+    #road_animation.check_track_size()
+    road_animation.plot_trajec('oval_track_single_lane_pos2023-06-30_16_00_43.txt')
+    #road_animation.add_translate([2.5, -1.5])
+    #road_animation.rotate_track(45)
+    #road_animation.save_track('translated_tracks', 'updated_coords.csv')
+    road_animation.plot_track(show_plot=False)
     road_animation.animate_plot(timepoints=30, save=False)
