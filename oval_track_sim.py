@@ -35,6 +35,22 @@ def find_closest_index(x_arr, y_arr, pos, L):
             closest_idx = i
     return closest_idx, closest_dist
 
+def find_closest_index_heuristic(x_waypoints, y_waypoints, vehicle_position, close_idx):
+	# Find the nearest waypoint to the vehicle
+    min_distance = float('inf')
+    nearest_waypoint_index = close_idx
+    length = len(x_waypoints)
+
+    for i in range(len(x_waypoints)):
+        j = (i + close_idx) % length
+        distance = math.sqrt((vehicle_position[0] - x_waypoints[j]) ** 2 + (vehicle_position[1] - y_waypoints[j]) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_waypoint_index = j
+        else:
+            break
+
+	return nearest_waypoint_index
 
 def get_waypoints_ahead(x_waypoints, y_waypoints, vehicle_position, L):
     # Find the nearest waypoint to the vehicle
