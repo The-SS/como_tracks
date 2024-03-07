@@ -36,6 +36,22 @@ def find_closest_index(x_arr, y_arr, pos, L):
             closest_idx = i
     return closest_idx, closest_dist
 
+def find_closest_index_heuristic(x_waypoints, y_waypoints, vehicle_position, close_idx):
+	# Find the nearest waypoint to the vehicle
+    min_distance = float('inf')
+    nearest_waypoint_index = close_idx
+    length = len(x_waypoints)
+
+    for i in range(len(x_waypoints)):
+        j = (i + close_idx) % length
+        distance = math.sqrt((vehicle_position[0] - x_waypoints[j]) ** 2 + (vehicle_position[1] - y_waypoints[j]) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_waypoint_index = j
+        else:
+            break
+
+    return nearest_waypoint_index
 
 def get_waypoints_ahead(x_waypoints, y_waypoints, vehicle_position, L):
     # Find the nearest waypoint to the vehicle
@@ -96,6 +112,57 @@ def get_waypoints_ahead_looped(x_waypoints, y_waypoints, vehicle_position, L):
 
     return waypoints_ahead_x, waypoints_ahead_y, accumulated_distance
 
+def get_waypoints_heuristic(x_waypoints, y_waypoints, vehicle_position, L, prev_idx):
+    # Find the nearest waypoint to the vehicle
+    min_distance = float('inf')
+    nearest_waypoint_index = 0
+    length = len(x_waypoints)
+
+    for i in range(len(x_waypoints)):
+        j = (i + prev_idx) % length
+        distance = math.sqrt((vehicle_position[0] - x_waypoints[j]) ** 2 + (vehicle_position[1] - y_waypoints[j]) ** 2)
+        if distance < min_distance:
+            min_distance = distance
+            nearest_waypoint_index = j
+        else:
+            break
+
+    # Iterate through waypoints from the nearest waypoint and accumulate distances
+    accumulated_distance = 0.0
+    waypoints_ahead_x = []
+    waypoints_ahead_y = []
+
+    for i in range(nearest_waypoint_index, nearest_waypoint_index + len(x_waypoints)):
+        index = i % len(x_waypoints)  # Wrap around the waypoints list
+
+        if i == nearest_waypoint_index:
+            distance = math.sqrt((vehicle_position[0] - x_waypoints[index]) ** 2 + (vehicle_position[1] - y_waypoints[index]) ** 2)
+        else:
+            distance = math.sqrt((x_waypoints[index-1] - x_waypoints[index]) ** 2 + (y_waypoints[index-1] - y_waypoints[index]) ** 2)
+        accumulated_distance += distance
+        waypoints_ahead_x.append(x_waypoints[index])
+        waypoints_ahead_y.append(y_waypoints[index])
+
+        # Break the loop if accumulated distance exceeds the lookahead distance
+        if accumulated_distance >= L:
+            break
+
+    return waypoints_ahead_x, waypoints_ahead_y, accumulated_distance, nearest_waypoint_index
+
+def get_ego_trajectory(x_waypoints, y_waypoints, vehicle_position, prev_idx, velocity, time_horizon):
+    cur_index = find_closest_index_heuristic(x_waypoints, y_waypoints, vehicle_position, prev_idx)
+    length = len(x_waypoints)
+    ego_trajectory_x = []
+    ego_trajectory_y = []
+
+    timesteps = np.arange(0.1, time_horizon + 0.1, 0.1)
+    for timestep in timesteps:
+        distance = velocity * timestep
+        index_shift = ((int(distance/0.01)) + prev_idx) % length
+        ego_trajectory_x.append(x_waypoints[index_shift])
+        ego_trajectory_y.append(y_waypoints[index_shift])
+
+    return ego_trajectory_x, ego_trajectory_y, cur_index
 
 def get_arc_radius(wp, dist, rob_pos, rob_head):
     p = transform_point_to_local_frame(wp, rob_pos, rob_head)
@@ -139,7 +206,7 @@ def plot_sim(x, y, x_track, y_track):
     plt.plot(x_track, y_track, 'r')
     plt.axis('equal')
     plt.title('trajectory')
-
+    plt.show()
 
 def main():
     file = os.path.join('tracks', 'oval_track_single_centerline5.txt')
@@ -154,6 +221,7 @@ def main():
     lookahead = 0.5
     dt = 0.05
     steer_min, steer_max = -np.pi / 5, np.pi / 5
+    sigma_delta, sigma_a = 0.1, 0.5
 
     # create robot object
     if dyn == 'teleport':
@@ -171,44 +239,77 @@ def main():
 
     print(robot)
 
-    x_track, y_track = [], []
+    x_trajs, y_trajs = [], []
 
-    # simulate the unicycle for 10 time steps with constant angular velocity 0.1
-    for i in range(500):
-        w1 = 0  # (np.random.rand() - 0.5) / 10
-        w2 = 0  # (np.random.rand() - 0.5) / 10
-        robot_pos = np.array([robot.x + w1, robot.y + w2])
-        waypoints_ahead_x, waypoints_ahead_y, dist = get_waypoints_ahead_looped(x, y, robot_pos, lookahead)
-        wp = np.array([waypoints_ahead_x[-1], waypoints_ahead_y[-1]])
+    plt.plot(x, y, 'k')
+    colors = ['b', 'g', 'r', 'c', 'm', 'y']
+    l_c = 6
 
-        if dyn == 'teleport':
-            robot.update(wp[0], wp[1])
-        elif dyn == 'singleIntegrator':
-            u = (wp - robot_pos) / dt
-            robot.update(u)
-        elif dyn == 'unicycle':
-            w = kp * get_arc_curvature(wp, dist, robot_pos, robot.theta) / dt
-            robot.update(v, w)
-        elif dyn == 'singleTrack':
-            accel = 0
-            steer_angle = kp * get_arc_curvature(wp, dist, robot_pos, robot.heading)
-            steer_angle = np.clip(steer_angle, steer_min, steer_max)
-            u = [accel, steer_angle]
-            robot.update(u)
-        elif dyn == 'kinematicBicycle':
-            accel = 0
-            steer_angle = kp * get_arc_curvature(wp, dist, robot_pos, robot.heading)
-            steer_angle = np.clip(steer_angle, steer_min, steer_max)
-            u = [accel, steer_angle]
-            robot.update(u)
-        else:
-            raise NotImplementedError('Undefined dynamics type')
+    for sim in range(11):
 
-        x_track.append(robot.x)
-        y_track.append(robot.y)
-        print(robot)
+        robot = KinematicBicycle(x=x0, y=y0, heading=theta0, v=v, lr=0.3, lf=0.1, max_steer=0.6283, dt=dt)
 
-    plot_sim(x, y, x_track, y_track)
+        x_track, y_track = [x0], [y0]
+
+        # simulate the model for 10 time steps
+        for i in range(250):
+            w1 = 0 # (np.random.rand() - 0.5) / 10
+            w2 = 0 # (np.random.rand() - 0.5) / 10
+            robot_pos = np.array([robot.x + w1, robot.y + w2])
+            waypoints_ahead_x, waypoints_ahead_y, dist = get_waypoints_ahead_looped(x, y, robot_pos, lookahead)
+            wp = np.array([waypoints_ahead_x[-1], waypoints_ahead_y[-1]])
+
+            if dyn == 'teleport':
+                robot.update(wp[0], wp[1])
+            elif dyn == 'singleIntegrator':
+                u = (wp - robot_pos) / dt
+                robot.update(u)
+            elif dyn == 'unicycle':
+                w = kp * get_arc_curvature(wp, dist, robot_pos, robot.theta) / dt
+                robot.update(v, w)
+            elif dyn == 'singleTrack':
+                accel = 0
+                steer_angle = kp * get_arc_curvature(wp, dist, robot_pos, robot.heading)
+                steer_angle = np.clip(steer_angle, steer_min, steer_max)
+                u = [accel, steer_angle]
+                robot.update(u)
+            elif dyn == 'kinematicBicycle':
+                accel = 0
+                steer_angle = kp * get_arc_curvature(wp, dist, robot_pos, robot.heading)
+                steer_angle = np.clip(steer_angle, steer_min, steer_max)
+                u = [accel + np.random.normal(0, sigma_a), steer_angle + np.random.normal(0, sigma_delta)]
+                if sim == 10:
+                    u = [accel, steer_angle]
+                robot.update(u)
+            else:
+                raise NotImplementedError('Undefined dynamics type')
+
+            x_track.append(robot.x)
+            y_track.append(robot.y)
+            # print(robot)
+
+        x_trajs.append(x_track)
+        y_trajs.append(y_track)
+
+        if sim != 10:
+            plt.plot(x_track, y_track, color=colors[sim % l_c], alpha=0.7)
+
+        # if sim == 1 or sim == 9:
+        #     plot_sim(x, y, x_track, y_track)
+
+    # print(x_trajs)
+    # print(y_trajs)
+    print(x)
+    print(y)
+    plt.axis('equal')
+    plt.title('trajectory')
+    plt.show()
+
+    plt.plot(x, y, 'k')
+    plt.plot(x_trajs[-1], y_trajs[-1], color='r', alpha=0.7)
+    plt.axis('equal')
+    plt.title('trajectory')
+    plt.show()
 
 
 if __name__ == "__main__":

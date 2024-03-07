@@ -115,6 +115,59 @@ class SingleTrack:
         state = self.get_state()
         return f'x: {state[0]}, y: {state[1]}, heading: {state[2]}, v: {state[3]}, steering: {self.u[1]}'
 
+class KinematicBicycle:
+    def __init__(self, x=0., y=0., heading=0., v=0., lr=0.5, lf=0.5, max_steer=0.6283, dt=0.01):
+        """
+        Initialize the Linear Kinematic Bicycle model with:
+         - initial pose (x, y, heading)
+         - velocity (v)
+         - wheelbase (L = lf + lr where lf=(front_wheel-COM), lr=(COM - rear_wheel))
+        max_steer: maximum steering angle for the model
+        dt: time step for simulation
+        Inputs: acceleration and steering angle
+        """
+        self.x = x
+        self.y = y
+        self.heading = heading
+        self.v = v
+        self.lf, self.lr = lf, lr
+        self.wheelbase = lf + lr
+        self.max_steer = max_steer
+        self.dt = dt
+        self.u = [0, 0]  # (acceleration and steering)
+
+        self.state = lambda px, py, theta, vel: np.array([px, py, theta, vel])
+        self.dyn = lambda state, u: \
+            np.array(
+                [state[3] * np.cos(state[2]),
+                 state[3] * np.sin(state[2]),
+                 state[3] * np.tan(u[1]) / self.wheelbase,
+                 u[0]])
+
+    def get_state(self):
+        return self.state(self.x, self.y, self.heading, self.v)
+
+    def update(self, u):
+        """
+        Update the kinematic bicyle model using the current acceleration and steering.
+        """
+        self.u = u
+        if self.u[1] < -self.max_steer:
+            self.u[1] = -self.max_steer
+        elif self.u[1] > self.max_steer:
+            self.u[1] = self.max_steer
+
+        state = self.get_state()
+        next_state = state + self.dyn(state, u) * self.dt
+        self.x, self.y, self.heading, self.v = next_state[0], next_state[1], next_state[2], next_state[3]
+        return next_state
+
+    def __str__(self):
+        """
+        Print state.
+        """
+        state = self.get_state()
+        return f'x: {state[0]}, y: {state[1]}, heading: {state[2]}, v: {state[3]}, steering: {self.u[1]}'
 
 def plot_data(t, x, y, heading=None, steering=None, title=None):
     n_plots = 2
@@ -210,11 +263,33 @@ def test_single_track():
         steer.append(robot.u[1])
     plot_data(t, x, y, heading=theta, steering=steer, title="SingleTrack: circle + accelerate")
 
+def test_kinematic_bicycle():
+    t = 1000
+
+    x, y, theta, steer = [], [], [], []
+    robot = SingleTrack(x=0., y=0., heading=0., v=1., lr=0.3, lf=0.3, dt=0.1)
+    for _ in range(t):
+        robot.update(u=[1, 0])
+        x.append(robot.x)
+        y.append(robot.y)
+        theta.append(robot.heading)
+        steer.append(robot.u[1])
+    plot_data(t, x, y, heading=theta, steering=steer, title="SingleTrack: straight + accelerate")
+
+    x, y, theta, steer = [], [], [], []
+    robot = SingleTrack(x=0., y=0., heading=0., v=1., lr=0.3, lf=0.3, dt=0.01)
+    for _ in range(t):
+        robot.update(u=[1, 0.3])
+        x.append(robot.x)
+        y.append(robot.y)
+        theta.append(robot.heading)
+        steer.append(robot.u[1])
+    plot_data(t, x, y, heading=theta, steering=steer, title="SingleTrack: circle + accelerate")
 
 def main():
-    test_unicycle()
-    test_single_track()
-
+    #test_unicycle()
+    #test_single_track()
+    test_kinematic_bicycle()
 
 if __name__ == "__main__":
     main()
